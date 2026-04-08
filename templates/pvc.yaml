@@ -1,0 +1,22 @@
+{{- $defaults := .Values.defaults }}
+{{- range $mirror := .Values.mirrors }}
+{{- $persistence := mustMergeOverwrite (deepCopy ($defaults.persistence | default dict)) ($mirror.persistence | default dict) }}
+{{- if $persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "registry-mirror.resourceName" (dict "root" $ "mirror" $mirror) }}
+  labels:
+    {{- include "registry-mirror.labels" (dict "root" $ "mirror" $mirror) | nindent 4 }}
+spec:
+  accessModes:
+    {{- toYaml ($persistence.accessModes | default (list "ReadWriteOnce")) | nindent 4 }}
+  {{- if $persistence.storageClass }}
+  storageClassName: {{ $persistence.storageClass }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $persistence.size | default "50Gi" }}
+{{- end }}
+{{- end }}

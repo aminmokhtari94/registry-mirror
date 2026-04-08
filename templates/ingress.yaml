@@ -1,0 +1,36 @@
+{{- $defaults := .Values.defaults }}
+{{- range $mirror := .Values.mirrors }}
+{{- $ingress := mustMergeOverwrite (deepCopy ($defaults.ingress | default dict)) ($mirror.ingress | default dict) }}
+{{- if $ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "registry-mirror.resourceName" (dict "root" $ "mirror" $mirror) }}
+  labels:
+    {{- include "registry-mirror.labels" (dict "root" $ "mirror" $mirror) | nindent 4 }}
+  {{- with $ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if $ingress.className }}
+  ingressClassName: {{ $ingress.className }}
+  {{- end }}
+  {{- if $ingress.tls }}
+  tls:
+    {{- toYaml $ingress.tls | nindent 4 }}
+  {{- end }}
+  rules:
+    - host: {{ $ingress.host }}
+      http:
+        paths:
+          - path: {{ $ingress.path | default "/" }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "registry-mirror.resourceName" (dict "root" $ "mirror" $mirror) }}
+                port:
+                  name: http
+{{- end }}
+{{- end }}

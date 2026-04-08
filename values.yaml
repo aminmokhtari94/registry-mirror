@@ -1,0 +1,60 @@
+# Default values applied to all mirrors unless overridden per-mirror
+defaults:
+  image: docker.arvancloud.ir/registry:2
+  replicaCount: 1
+  env: []
+    # - name: REGISTRY_LOG_LEVEL
+    #   value: info
+    # - name: REGISTRY_STORAGE_DELETE_ENABLED
+    #   value: "true"
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  ingress:
+    enabled: false
+    path: /
+    className: ""
+    annotations: {}
+    tls: []
+  persistence:
+    enabled: false
+    size: 50Gi
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+
+mirrors:
+  - name: dockerhub
+    remoteURL: https://registry-1.docker.io
+    # Override defaults per mirror:
+    # image: docker.arvancloud.ir/registry:2
+    # replicaCount: 2
+    # env:
+    #   - name: REGISTRY_LOG_LEVEL
+    #     value: debug
+    # resources:
+    #   limits:
+    #     cpu: 1
+    #     memory: 1Gi
+    ingress:
+      host: dockerhub.mirror.local
+      # - secretName: dockerhub-tls
+      #   hosts:
+      #     - dockerhub.mirror.local
+
+  - name: ghcr
+    remoteURL: https://ghcr.io
+    ingress:
+      host: ghcr.mirror.local
+
+imagePullSecrets: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

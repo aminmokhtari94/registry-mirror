@@ -1,0 +1,18 @@
+{{- range $mirror := .Values.mirrors }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "registry-mirror.resourceName" (dict "root" $ "mirror" $mirror) }}
+  labels:
+    {{- include "registry-mirror.labels" (dict "root" $ "mirror" $mirror) | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "registry-mirror.selectorLabels" (dict "root" $ "mirror" $mirror) | nindent 4 }}
+{{- end }}

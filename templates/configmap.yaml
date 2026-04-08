@@ -1,0 +1,19 @@
+{{- range $mirror := .Values.mirrors }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "registry-mirror.resourceName" (dict "root" $ "mirror" $mirror) }}
+  labels:
+    {{- include "registry-mirror.labels" (dict "root" $ "mirror" $mirror) | nindent 4 }}
+data:
+  config.yml: |
+    version: 0.1
+    proxy:
+      remoteurl: {{ $mirror.remoteURL }}
+    storage:
+      filesystem:
+        rootdirectory: /var/lib/registry
+    http:
+      addr: :5000
+{{- end }}

@@ -1,0 +1,83 @@
+{{- $defaults := .Values.defaults }}
+{{- range $mirror := .Values.mirrors }}
+{{- $image := $mirror.image | default $defaults.image | default "registry:2" }}
+{{- $replicas := $mirror.replicaCount | default $defaults.replicaCount | default 1 }}
+{{- $resources := $mirror.resources | default $defaults.resources }}
+{{- $env := $mirror.env | default $defaults.env }}
+{{- $persistence := $mirror.persistence | default $defaults.persistence }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "registry-mirror.resourceName" (dict "root" $ "mirror" $mirror) }}
+  labels:
+    {{- include "registry-mirror.labels" (dict "root" $ "mirror" $mirror) | nindent 4 }}
+spec:
+  replicas: {{ $replicas }}
+  selector:
+    matchLabels:
+      {{- include "registry-mirror.selectorLabels" (dict "root" $ "mirror" $mirror) | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+      labels:
+        {{- include "registry-mirror.labels" (dict "root" $ "mirror" $mirror) | nindent 8 }}
+    spec:
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: registry
+          image: {{ $image }}
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          {{- with $env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          {{- with $resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/docker/registry
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/registry
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "registry-mirror.resourceName" (dict "root" $ "mirror" $mirror) }}
+        - name: data
+          {{- if and $persistence $persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "registry-mirror.resourceName" (dict "root" $ "mirror" $mirror) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- with $.Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
