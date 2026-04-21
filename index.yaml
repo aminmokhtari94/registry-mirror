@@ -1,0 +1,15 @@
+apiVersion: v1
+entries:
+  registry-mirror:
+  - apiVersion: v2
+    appVersion: 2.8.3
+    created: "2026-04-21T16:34:44.124579277Z"
+    description: Deploy multiple Docker registry pull-through cache mirrors
+    digest: 2e989a0cd22c689ce574b46927ba1e5355ed8a7b93980ad50030d4f5b1afa0d6
+    kubeVersion: '>=1.25.0-0'
+    name: registry-mirror
+    type: application
+    urls:
+    - https://aminmokhtari94.github.io/registry-mirror/registry-mirror-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-04-21T16:34:44.12345921Z"
